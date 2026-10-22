@@ -54,17 +54,11 @@ Markdown    marked + DOMPurify + 代码块高亮
 
 ## 💻 本地运行
 
-```bash
-# 克隆
-git clone https://github.com/<你的用户名>/<你的仓库名>.git
-cd code-reviewer
-
 # 安装依赖
 npm install
 
 # 启动开发服务器
 npm run dev
-# 打开 http://localhost:5173
 
 # 生产构建
 npm run build
@@ -83,15 +77,6 @@ npm run build
 
 > API Key 仅保存在你自己的浏览器 localStorage 里，**不会上传任何服务器**。
 
-## 📦 部署到 GitHub Pages
-
-项目已配好 `.github/workflows/deploy.yml`，只需 3 步：
-
-1. **仓库 Settings → Pages → Source** 选择 `GitHub Actions`
-2. 推到 `main` 分支，Actions 自动构建并发布
-3. 几分钟后访问 `https://<你的用户名>.github.io/<仓库名>/`
-
-> `vite.config.ts` 已设 `base: './'`，Hash 路由模式，GitHub Pages 刷新零 404。
 
 ## 🗂 浏览器插件
 
