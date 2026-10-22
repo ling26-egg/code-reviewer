@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>CodeReview · 核心闭环技术架构</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', 'PingFang SC', system-ui, sans-serif;
+    background: #0a0e1a;
+    color: #e5e7eb;
+    min-height: 100vh;
+    padding: 40px 60px;
+  }
+  h1 {
+    font-size: 28px; font-weight: 700; margin-bottom: 6px;
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .subtitle { color: #9ca3af; font-size: 14px; margin-bottom: 40px; }
+
+  /* 架构主体 */
+  .arch { display: flex; flex-direction: column; gap: 20px; max-width: 1000px; }
+
+  .layer {
+    background: #111827;
+    border: 1px solid #1f2937;
+    border-radius: 14px;
+    padding: 20px 24px;
+    position: relative;
+  }
+  .layer-title {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 16px;
+  }
+  .layer-num {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px;
+    color: #0a0e1a;
+  }
+  .layer-name { font-size: 18px; font-weight: 700; color: #f59e0b; }
+  .layer-desc { font-size: 12px; color: #6b7280; margin-left: 4px; }
+
+  /* 每层颜色 */
+  .l-ui { .layer-num { background: #3b82f6; } }
+  .l-store { .layer-num { background: #8b5cf6; } }
+  .l-fsrs { .layer-num { background: #10b981; } }
+  .l-db { .layer-num { background: #f59e0b; } }
+
+  .tech-cards {
+    display: flex; flex-wrap: wrap; gap: 12px;
+  }
+  .tech-card {
+    background: #1a2234;
+    border: 1px solid #2e3748;
+    border-radius: 10px;
+    padding: 12px 16px;
+    flex: 1 1 calc(33% - 8px);
+    min-width: 200px;
+  }
+  .tech-card .tc-name {
+    font-weight: 600; font-size: 14px; color: #e5e7eb;
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 4px;
+  }
+  .tech-card .tc-name .tc-tag {
+    font-size: 10px; padding: 2px 6px; border-radius: 4px;
+    background: #f59e0b20; color: #f59e0b; font-weight: 600;
+  }
+  .tech-card .tc-desc {
+    font-size: 12px; color: #9ca3af; line-height: 1.5;
+  }
+
+  /* 箭头连接 */
+  .connector {
+    display: flex; justify-content: center;
+    height: 24px;
+    position: relative;
+  }
+  .connector .arrow {
+    width: 2px; height: 100%;
+    background: linear-gradient(#f59e0b, transparent);
+    position: absolute; top: 0; left: 50%;
+  }
+  .connector .arrow::after {
+    content: '▼';
+    position: absolute; bottom: -8px; left: -8px;
+    font-size: 12px; color: #f59e0b;
+  }
+  .connector .label {
+    position: absolute; top: -6px; left: 52%;
+    font-size: 11px; color: #f59e0b; white-space: nowrap;
+    padding: 2px 8px; background: #0a0e1a; border-radius: 4px;
+  }
+
+  /* FSRS 特殊说明 */
+  .fsrs-flow {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 10px; margin-top: 14px;
+  }
+  .fsrs-step {
+    background: #0f1b17; border: 1px solid #1a3328;
+    border-radius: 8px; padding: 12px; text-align: center;
+  }
+  .fsrs-step .fs-num {
+    font-size: 11px; color: #10b981; font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .fsrs-step .fs-text {
+    font-size: 12px; color: #d1fae5; line-height: 1.4;
+  }
+
+  /* 数据模型区 */
+  .db-schema {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 14px; margin-top: 8px;
+  }
+  .schema-box {
+    background: #0f1520; border: 1px solid #1f2937;
+    border-radius: 10px; padding: 14px;
+  }
+  .schema-box h4 {
+    font-size: 13px; color: #f59e0b; margin-bottom: 10px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .schema-box .field {
+    font-size: 12px; font-family: 'JetBrains Mono', monospace;
+    padding: 3px 0; color: #cbd5e1;
+  }
+  .schema-box .field .key { color: #7ee787; }
+  .schema-box .field .type { color: #8b949e; }
+  .schema-box .field .idx { color: #f59e0b; margin-left: 6px; font-size: 10px; }
+
+  /* 图例 */
+  .legend {
+    margin-top: 40px; padding-top: 20px;
+    border-top: 1px solid #1f2937;
+    display: flex; flex-wrap: wrap; gap: 20px;
+    font-size: 12px; color: #9ca3af;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot {
+    width: 10px; height: 10px; border-radius: 3px;
+  }
+
+  .highlight-box {
+    margin-top: 40px; padding: 18px;
+    background: rgba(245, 158, 11, 0.06);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    border-radius: 12px;
+  }
+  .highlight-box h3 { color: #f59e0b; font-size: 14px; margin-bottom: 8px; }
+  .highlight-box p { font-size: 12px; color: #d1d5db; line-height: 1.8; }
+  .highlight-box code {
+    background: #1a2234; padding: 2px 6px; border-radius: 4px;
+    color: #7ee787; font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+
+<h1>CodeReview · 核心闭环技术架构</h1>
+<p class="subtitle">知识点存储 → 间隔复习算法 → 复习循环 ｜ 大二前端学习参考</p>
+
+<div class="arch">
+
+  <!-- UI 层 -->
+  <div class="layer l-ui">
+    <div class="layer-title">
+      <div class="layer-num">1</div>
+      <div>
+        <div class="layer-name">UI 层 — 用户看到的页面</div>
+        <div class="layer-desc">Vue 3 组件 + Element Plus + Markdown 渲染</div>
+      </div>
+    </div>
+    <div class="tech-cards">
+      <div class="tech-card">
+        <div class="tc-name">📚 知识库 <span class="tc-tag">CRUD</span></div>
+        <div class="tc-desc">卡片列表 + 新建/编辑弹窗，textarea 手写 Markdown</div>
+      </div>
+      <div class="tech-card">
+        <div class="tc-name">🔄 复习页 <span class="tc-tag">核心</span></div>
+        <div class="tc-desc">从 Dexie 拉取 todayDue 卡片，评分后触发 FSRS 计算</div>
+      </div>
+      <div class="tech-card">
+        <div class="tc-name">📝 Markdown 渲染</div>
+        <div class="tc-desc"><code>marked</code> 把 Markdown 转 HTML，<code>DOMPurify</code> 防 XSS</div>
+      </div>
+      <div class="tech-card">
+        <div class="tc-name">💻 代码高亮</div>
+        <div class="tc-desc"><code>Shiki</code> 渲染代码块语法，支持 100+ 语言</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">
+    <div class="arrow"></div>
+    <span class="label">用户操作 → dispatch action</span>
+  </div>
+
+  <!-- Store 层 -->
+  <div class="layer l-store">
+    <div class="layer-title">
+      <div class="layer-num">2</div>
+      <div>
+        <div class="layer-name">Store 层 — 状态管理</div>
+        <div class="layer-desc">Pinia + Dexie 组合，响应式数据自动持久化</div>
+      </div>
+    </div>
+    <div class="tech-cards">
+      <div class="tech-card">
+        <div class="tc-name">cards store</div>
+        <div class="tc-desc">卡片 CRUD，从 Dexie 查询全部 / 分类 / todayDue</div>
+      </div>
+      <div class="tech-card">
+        <div class="tc-name">review store</div>
+        <div class="tc-desc">评分 → 调用 FSRS → 更新卡片记忆参数 → 写回 DB</div>
+      </div>
+      <div class="tech-card">
+        <div class="tc-name">统计 & 成就 store</div>
+        <div class="tc-desc">从复习记录聚合数据，触发勋章解锁判断</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">
+    <div class="arrow"></div>
+    <span class="label">评分 → FSRS(grade) → 更新记忆参数</span>
+  </div>
+
+  <!-- FSRS 层 -->
+  <div class="layer l-fsrs">
+    <div class="layer-title">
+      <div class="layer-num">3</div>
+      <div>
+        <div class="layer-name">FSRS 算法层 — 间隔重复核心</div>
+        <div class="layer-desc">让每张卡片有独立的记忆曲线，科学安排复习时间</div>
+      </div>
+    </div>
+    <div class="tech-cards">
+      <div class="tech-card">
+        <div class="tc-name">记忆参数 (Memory)</div>
+        <div class="tc-desc">
+          <code>difficulty</code> 0~10 ·
+          <code>stability</code> 掌握度 ·
+          <code>retrievability</code> 可回忆概率
+        </div>
+      </div>
+      <div class="tech-card">
+        <div class="tc-name">4 档评分 (grade)</div>
+        <div class="tc-desc">Again=1 忘记 · Hard=2 困难 · Good=3 良好 · Easy=4 简单</div>
+      </div>
+      <div class="tech-card">
+        <div class="tc-name">下次间隔 (interval)</div>
+        <div class="tc-desc">由 FSRS 根据当前记忆参数 + 评分动态算出，不是固定值</div>
+      </div>
+    </div>
+    <!-- FSRS 流程图 -->
+    <div class="fsrs-flow">
+      <div class="fsrs-step">
+        <div class="fs-num">① 用户评分</div>
+        <div class="fs-text">Again / Hard / Good / Easy</div>
+      </div>
+      <div class="fsrs-step">
+        <div class="fs-num">② FSRS 计算</div>
+        <div class="fs-text">更新 stability / difficulty / retrievability</div>
+      </div>
+      <div class="fsrs-step">
+        <div class="fs-num">③ 计算 interval</div>
+        <div class="fs-text">Good → 7天, Again → 1天, Easy → 15天</div>
+      </div>
+      <div class="fsrs-step">
+        <div class="fs-num">④ 写回 Dexie</div>
+        <div class="fs-text">due 日期更新，下次复习自动进入队列</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">
+    <div class="arrow"></div>
+    <span class="label">Dexie 链式查询 / 写入</span>
+  </div>
+
+  <!-- 数据层 -->
+  <div class="layer l-db">
+    <div class="layer-title">
+      <div class="layer-num">4</div>
+      <div>
+        <div class="layer-name">数据层 — Dexie + IndexedDB</div>
+        <div class="layer-desc">纯前端持久化，无后端依赖，浏览器自带</div>
+      </div>
+    </div>
+
+    <div class="tech-cards">
+      <div class="tech-card">
+        <div class="tc-name">Dexie.js</div>
+        <div class="tc-desc">IndexedDB 的封装，类 SQL 的链式 API，<br>比原生 IndexedDB 简单 10 倍</div>
+      </div>
+      <div class="tech-card">
+        <div class="tc-name">为什么不选 localStorage?</div>
+        <div class="tc-desc">只有 5MB，只能存字符串。IndexedDB 无上限，存对象/二进制/视频都 OK</div>
+      </div>
+    </div>
+
+    <div class="db-schema">
+      <div class="schema-box">
+        <h4>cards 表（知识点）</h4>
+        <div class="field"><span class="key">id</span> <span class="type">++number</span> <span class="idx">自增主键</span></div>
+        <div class="field"><span class="key">title</span> <span class="type">string</span> <span class="idx">&amp;</span></div>
+        <div class="field"><span class="key">content</span> <span class="type">string</span> <span class="idx">// Markdown 正文</span></div>
+        <div class="field"><span class="key">category</span> <span class="type">string</span> <span class="idx">&amp;</span></div>
+        <div class="field"><span class="key">tags</span> <span class="type">string[]</span></div>
+        <div class="field"><span class="key">createdAt</span> <span class="type">Date</span></div>
+      </div>
+      <div class="schema-box">
+        <h4>fsrs 表（记忆参数 + 复习记录）</h4>
+        <div class="field"><span class="key">id</span> <span class="type">++number</span></div>
+        <div class="field"><span class="key">cardId</span> <span class="type">number</span> <span class="idx">&amp;</span></div>
+        <div class="field"><span class="key">stability</span> <span class="type">number</span></div>
+        <div class="field"><span class="key">difficulty</span> <span class="type">number</span></div>
+        <div class="field"><span class="key">retrievability</span> <span class="type">number</span></div>
+        <div class="field"><span class="key">due</span> <span class="type">Date</span> <span class="idx">&amp;</span></div>
+        <div class="field"><span class="key">interval</span> <span class="type">number</span> <span class="idx">// 下次间隔(天)</span></div>
+        <div class="field"><span class="key">reviewCount</span> <span class="type">number</span></div>
+        <div class="field"><span class="key">state</span> <span class="type">string</span> <span class="idx">// new/learning/review/master</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 亮点总结 -->
+<div class="highlight-box">
+  <h3>💡 核心闭环跑通后的效果</h3>
+  <p>
+    1. 写一张知识点 → Dexie 自动分配 <code>stability=0</code> 新卡记录<br>
+    2. 复习页只显示 <code>due &lt;= today</code> 的卡片<br>
+    3. 你点 Good → FSRS 算出 interval=7 → <code>due = now + 7天</code><br>
+    4. 再次打开应用，卡片不会再出现在复习队列，直到 7 天后自动出现<br>
+    5. 成就系统从 <code>fsrs</code> 表聚合数据，解锁「连续 7 天」「掌握 50 个」等勋章<br>
+    6. **全程无后端，纯前端，刷新数据不丢**
+  </p>
+</div>
+
+<!-- 图例 -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>UI 层</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div>Store / 状态</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>FSRS 算法</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Dexie + IndexedDB</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;border-radius:4px;width:4px;height:10px"></div>数据流方向</div>
+</div>
+
+</body>
+</html>
