@@ -85,23 +85,19 @@ npm run build
 - 选中网页文字 → 右键「保存到代码复习助手」→ 自动跳转应用创建知识点
 - 在 `chrome://extensions` 开启开发者模式 → 加载已解压扩展 → 选 `extension/` 目录
 
-## 🏗 项目结构
-
-```
 code-reviewer/
 ├── src/
 │   ├── components/          # 悬浮球 / AI 面板 / Sidebar / 壁纸设置
 │   ├── layouts/             # DefaultLayout（左侧栏 + 顶栏 + 主内容）
-│   ├── views/               # 6 个页面：Login / Dashboard / Library / Review / Stats / Settings / Achievements / ExtensionImport
-│   ├── stores/              # Pinia stores：auth / ai / user / settings / wallpaper / notice / achievement / app
-│   ├── utils/               # db.ts（Dexie）/ fsrs.ts（算法封装）/ ai.ts（流式调用）/ stats.ts（统计聚合）/ backup.ts（账号包）/ leetcode.ts / idb.ts
+│   ├── views/               # 页面：Login / Dashboard / Library / Review / Stats / Settings / Achievements / ExtensionImport
+│   ├── stores/              # Pinia stores：auth /ai/user /settings/wallpaper /notice/achievement /app
+│   ├── utils/               # db.ts (Dexie) /fsrs.ts (算法封装) /ai.ts (流式调用) /stats.ts (统计聚合) /backup.ts (账号包) /leetcode.ts/idb.ts
 │   ├── router/index.ts      # Vue Router + 登录守卫
 │   ├── App.vue              # 根组件
 │   └── main.ts
 ├── extension/               # 浏览器插件源码
 ├── docs/                    # 架构图文档
-└── .github/workflows/       # 自动部署 Actions
-```
+└── .github/workflows/       # 自动部署 Action
 
 ## ⚠️ 注意事项
 
